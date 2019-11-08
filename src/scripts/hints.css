@@ -1,17 +1,18 @@
 span[vimbhint^='label']{
-    background-color:#fff;
-    border:1px solid #444;
-    color:#000;
-    font:bold .8em monospace;
+    background-color:#333;
+    //border:1px solid #444;
+    border-radius: 2px;
+    color:#fff;
+    font:bold 12pt inconsolata;
     margin:0;
-    opacity:0.7;
+    opacity:0.8;
     padding:0px 1px;
     position:fixed !important;
     z-index:225000
 }
 *[vimbhint^='hint']{
-    background-color:#ff0 !important;
-    color:#000 !important;
+    background-color:#333 !important;
+    color:#fff !important;
     transition-delay:all 0 !important;
     transition:all 0 !important;
     opacity:1 !important
