@@ -189,6 +189,11 @@ void setting_init(Client *c)
 
     map_insert(c, "jk", "<Esc>", *"i", true);
     map_insert(c, "jk", "<Esc>", *"c", true);
+
+    map_insert(c, "H", "<C-O>", *"n", true);
+    map_insert(c, "J", "<C-O>", *"n", true);
+    map_insert(c, "K", "<C-I>", *"n", true);
+    map_insert(c, "L", "<C-I>", *"n", true);
 }
 
 VbCmdResult setting_run(Client *c, char *name, const char *param)
