@@ -17,9 +17,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-#include <gdk/gdkx.h>
+#include "config.h"
 #include <gtk/gtk.h>
+#ifndef FEATURE_NO_XEMBED
+#include <gdk/gdkx.h>
 #include <gtk/gtkx.h>
+#endif
 #include <libsoup/soup.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -32,7 +35,6 @@
 #include "ascii.h"
 #include "command.h"
 #include "completion.h"
-#include "config.h"
 #include "ex.h"
 #include "ext-proxy.h"
 #include "handler.h"
@@ -118,6 +120,8 @@ static void on_script_message_focus(WebKitUserContentManager *manager,
         WebKitJavascriptResult *res, gpointer data);
 static gboolean profileOptionArgFunc(const gchar *option_name,
         const gchar *value, gpointer data, GError **error);
+static gboolean autocmdOptionArgFunc(const gchar *option_name,
+        const gchar *value, gpointer data, GError **error);
 
 struct Vimb vb;
 
@@ -145,7 +149,7 @@ gboolean vb_download_set_destination(Client *c, WebKitDownload *download,
 
     /* Prepare the path to save the download. */
     if (path && *path) {
-        file = util_build_path(c->state, path, download_path);
+        file = util_build_path(path, download_path);
 
         /* if file is an directory append a file name */
         if (g_file_test(file, (G_FILE_TEST_IS_DIR))) {
@@ -154,7 +158,7 @@ gboolean vb_download_set_destination(Client *c, WebKitDownload *download,
             g_free(dir);
         }
     } else {
-        file = util_build_path(c->state, suggested_filename, download_path);
+        file = util_build_path(suggested_filename, download_path);
     }
 
     g_free(basename);
@@ -765,7 +769,9 @@ static Client *client_new(WebKitWebView *webview)
 static void client_show(WebKitWebView *webview, Client *c)
 {
     GtkWidget *box;
+#ifndef FEATURE_NO_XEMBED
     char *xid;
+#endif
 
     c->window = create_window(c);
 
@@ -815,6 +821,7 @@ static void client_show(WebKitWebView *webview, Client *c)
     setting_init(c);
 
     gtk_widget_show_all(c->window);
+#ifndef FEATURE_NO_XEMBED
     if (vb.embed) {
         xid = g_strdup_printf("%d", (int)vb.embed);
     } else {
@@ -824,6 +831,7 @@ static void client_show(WebKitWebView *webview, Client *c)
     /* set the x window id to env */
     g_setenv("VIMB_XID", xid, TRUE);
     g_free(xid);
+#endif
 
     /* start client in normal mode */
     vb_enter(c, 'n');
@@ -838,16 +846,20 @@ static GtkWidget *create_window(Client *c)
 {
     GtkWidget *window;
 
+#ifndef FEATURE_NO_XEMBED
     if (vb.embed) {
         window = gtk_plug_new(vb.embed);
     } else {
+#endif
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
         gtk_window_set_role(GTK_WINDOW(window), PROJECT_UCFIRST);
         gtk_window_set_default_size(GTK_WINDOW(window), WIN_WIDTH, WIN_HEIGHT);
         if (!vb.no_maximize) {
             gtk_window_maximize(GTK_WINDOW(window));
         }
+#ifndef FEATURE_NO_XEMBED
     }
+#endif
 
     g_object_connect(
             G_OBJECT(window),
@@ -1029,7 +1041,8 @@ static void spawn_new_instance(const char *uri)
 #endif
         + (vb.incognito ? 1 : 0)
         + (vb.profile ? 2 : 0)
-        + (vb.no_maximize ? 1 : 0),
+        + (vb.no_maximize ? 1 : 0)
+        + g_slist_length(vb.cmdargs) * 2,
         sizeof(char *)
     );
 
@@ -1056,6 +1069,10 @@ static void spawn_new_instance(const char *uri)
     }
     if (vb.no_maximize) {
         cmd[i++] = "--no-maximize";
+    }
+    for (GSList *l = vb.cmdargs; l; l = l->next) {
+        cmd[i++] = "-C";
+        cmd[i++] = l->data;
     }
     cmd[i++] = (char*)uri;
     cmd[i++] = NULL;
@@ -1374,6 +1391,10 @@ static void decide_navigation_action(Client *c, WebKitPolicyDecision *dec)
         webkit_policy_decision_ignore(dec);
         spawn_new_instance(uri);
     } else {
+#ifdef FEATURE_AUTOCMD
+        if (strcmp(uri, "about:blank"))
+            autocmd_run(c, AU_LOAD_STARTING, uri, NULL);
+#endif
         webkit_policy_decision_use(dec);
     }
 }
@@ -1782,6 +1803,8 @@ static void vimb_cleanup(void)
         }
     }
     g_free(vb.profile);
+
+    g_slist_free_full(vb.cmdargs, g_free);
 }
 #endif
 
@@ -2008,7 +2031,16 @@ static gboolean on_permission_request(WebKitWebView *webview,
     char *msg = NULL;
 
     if (WEBKIT_IS_GEOLOCATION_PERMISSION_REQUEST(request)) {
-        msg = "request your location";
+        char* geolocation_setting = GET_CHAR(c, "geolocation");
+        if (strcmp(geolocation_setting, "ask") == 0) {
+            msg = "access your location";
+        } else if (strcmp(geolocation_setting, "always") == 0) {
+            webkit_permission_request_allow(request);
+            return TRUE;
+        } else if (strcmp(geolocation_setting, "never") == 0) {
+            webkit_permission_request_deny(request);
+            return TRUE;
+        }
     } else if (WEBKIT_IS_USER_MEDIA_PERMISSION_REQUEST(request)) {
         if (webkit_user_media_permission_is_for_audio_device(WEBKIT_USER_MEDIA_PERMISSION_REQUEST(request))) {
             msg = "access the microphone";
@@ -2072,16 +2104,29 @@ static gboolean profileOptionArgFunc(const gchar *option_name,
     return TRUE;
 }
 
+static gboolean autocmdOptionArgFunc(const gchar *option_name,
+        const gchar *value, gpointer data, GError **error)
+{
+    vb.cmdargs = g_slist_append(vb.cmdargs, g_strdup(value));
+    return TRUE;
+}
+
 int main(int argc, char* argv[])
 {
     Client *c;
     GError *err = NULL;
-    char *pidstr, *winid = NULL;
+    char *pidstr;
+#ifndef FEATURE_NO_XEMBED
+    char *winid = NULL;
+#endif
     gboolean ver = FALSE, buginfo = FALSE;
 
     GOptionEntry opts[] = {
+        {"cmd", 'C', 0, G_OPTION_ARG_CALLBACK, (GOptionArgFunc*)autocmdOptionArgFunc, "Ex command run before first page is loaded", NULL},
         {"config", 'c', 0, G_OPTION_ARG_FILENAME, &vb.configfile, "Custom configuration file", NULL},
+#ifndef FEATURE_NO_XEMBED
         {"embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "Reparents to window specified by xid", NULL},
+#endif
         {"incognito", 'i', 0, G_OPTION_ARG_NONE, &vb.incognito, "Run with user data read-only", NULL},
         {"profile", 'p', 0, G_OPTION_ARG_CALLBACK, (GOptionArgFunc*)profileOptionArgFunc, "Profile name", NULL},
         {"version", 'v', 0, G_OPTION_ARG_NONE, &ver, "Print version", NULL},
@@ -2145,12 +2190,19 @@ int main(int argc, char* argv[])
 
     vimb_setup();
 
+#ifndef FEATURE_NO_XEMBED
     if (winid) {
         vb.embed = strtol(winid, NULL, 0);
     }
+#endif
 
     c = client_new(NULL);
     client_show(NULL, c);
+
+    /* process the --cmd if this was given */
+    for (GSList *l = vb.cmdargs; l; l = l->next) {
+        ex_run_string(c, l->data, false);
+    }
     if (argc <= 1) {
         vb_load_uri(c, &(Arg){TARGET_CURRENT, NULL});
     } else if (!strcmp(argv[argc - 1], "-")) {

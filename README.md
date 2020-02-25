@@ -1,6 +1,6 @@
 # Vimb - the Vim-like browser
 
-[![Build Status](https://api.travis-ci.com/fanglingsu/vimb.svg?branch=master)](https://travis-ci.com/fanglingsu/vimb)
+[![Build Status](https://travis-ci.com/fanglingsu/vimb.svg?branch=master)](https://travis-ci.com/fanglingsu/vimb)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Latest Release](https://img.shields.io/github/release/fanglingsu/vimb.svg?style=flat)](https://github.com/fanglingsu/vimb/releases/latest)
 
@@ -29,7 +29,7 @@ the project page of [Vimb][].
 
 ## Packages
 
-- Arch Linux: [aur/vimb][], [aur/vimb-git][]
+- Arch Linux: [community/vimb][], [aur/vimb-git][], [aur/vimb-gtk2][]
 - Gentoo: [gentoo-git][], [gentoo][]
 - openSUSE: [network/vimb][]
 - pkgsrc: [pkgsrc/www/vimb][], [pkgsrc/wip/vimb-git][]
@@ -85,7 +85,8 @@ Information about the license are found in the file LICENSE.
 - https://blog.jeaye.com/2015/08/23/vimb/
 
 [aur/vimb-git]:        https://aur.archlinux.org/packages/vimb-git
-[aur/vimb]:            https://aur.archlinux.org/packages/vimb
+[aur/vimb-gtk2]:       https://aur.archlinux.org/packages/vimb-gtk2/
+[community/vimb]:      https://www.archlinux.org/packages/community/x86_64/vimb/
 [gentoo-git]:          https://github.com/tharvik/overlay/tree/master/www-client/vimb
 [gentoo]:              https://github.com/hsoft/portage-overlay/tree/master/www-client/vimb
 [mail-archive]:        https://sourceforge.net/p/vimb/vimb/vimb-users/ "vimb - mailing list archive"

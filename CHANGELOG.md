@@ -7,8 +7,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+* The new env variable `$VIMB_SELECTION` is set to the current selected text
+  whenever a `shellcmd` is run #592.
+### Fixed
+* Fixed ignored last line in config file if this line did not end in newline.
+### Removed
+* Expansion of `%` to the current opened URI for `:shellcmd` was removed
+  because it breaks the `x-hint-command` with URIs containing '%'. But it is
+  still possible to use `$VIMB_URI` for the `:shellcmd` which has the same
+  effect.
+
+## [3.6.0] - 2020-01-02
+### Added
 * `:cleardata [listOfDataTypes] [timeSpan]` command to clear various types of
   stored website data modified in the last _timeSpan_.
+* Setting `hint-match-element` to allow to disable the hinting to filter hints
+  by the elements text content. This is useful if 'hint-keys' are set the
+  chars instead of numbers.
+* New autocmd event `LoadStarting` to run auto commands before the first page
+  content is loaded (Thanks to Patrick Steinhardt).
+* Setting `geolocation` with values ('ask', 'always' and 'never') to allow the
+  user to permit or disable geolcation requests by default (Thanks to Alva).
+* Setting `dark-mode` to switch the webview into dark mode, which might be
+  picked up by pages media query to setup dark styling (Thanks to Alva).
+* Option `--cmd, -C` to run ex commands on startup.
 ### Changed
 ### Fixed
 ### Removed
@@ -261,7 +283,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   cookie file
 * Fixed none POSIX `echo -n` call
 
-[Unreleased]: https://github.com/fanglingsu/vimb/compare/3.5.0...master
+[Unreleased]: https://github.com/fanglingsu/vimb/compare/3.6.0...master
+[3.6.0]: https://github.com/fanglingsu/vimb/compare/3.5.0...3.6.0
 [3.5.0]: https://github.com/fanglingsu/vimb/compare/3.4.0...3.5.0
 [3.4.0]: https://github.com/fanglingsu/vimb/compare/3.3.0...3.4.0
 [3.3.0]: https://github.com/fanglingsu/vimb/compare/3.2.0...3.3.0

@@ -25,6 +25,17 @@ If \fIURI\fP is '-', Vimb reads the HTML to display from stdin.
 .P
 Mandatory arguments to long options are mandatory for short options too.
 .TP
+.BI "\-C, \-\-cmd " "CMD"
+Run \fICMD\fP as ex command line right before the first page is loaded.
+If the flag is used more than one time, the commands are called in order they
+are given.
+You could also pass several ex commands in one \fICMD\fP,
+if they are separated by "|".
+.sp
+.EX
+vimb --cmd "set dark-mode=on|set header=Referer,DNT=1"
+.EE
+.TP
 .BI "\-c, \-\-config " "FILE"
 Use custom configuration given as \fIFILE\fP.
 This will also be applied on new spawned instances.
@@ -729,6 +740,10 @@ No white space can be used in this list.
 .PD 0
 Events:
 .TP
+.B LoadStarting
+Fired before a new page is going to be opened.
+No data has been sent or received yet, the load may still fail for transport issues.
+.TP
 .B LoadStarted
 Fired if a new page is going to be opened.
 No data has been received yet, the load may still fail for transport issues.
@@ -934,6 +949,9 @@ The following environment variables are set for called shell commands.
 This variable is set by Vimb everytime a new page is opened to the URI of the
 page.
 .TP
+.B VIMB_SELECTION
+This variable is set to the current selected text on the page.
+.TP
 .B VIMB_TITLE
 Contains the title of the current opened page.
 .TP
@@ -942,7 +960,7 @@ Contains the pid of the running Vimb instance.
 .TP
 .B VIMB_XID
 Holds the X-Window id of the Vimb window or of the embedding window if Vimb is
-started with the -e option.
+compiled with XEMBED and started with the -e option.
 .EE
 .RE
 .TP
@@ -1139,6 +1157,10 @@ selected.
 .B cursiv-font (string)
 The font family used as the default for content using cursive font.
 .TP
+.B dark-mode (bool)
+Whether to enable dark mode. Websites can use the `prefers-color-scheme' media
+query to adjust styles according to this option.
+.TP
 .B default-charset (string)
 The default text charset used when interpreting content with an unspecified
 charset.
@@ -1284,6 +1306,12 @@ To have upper case hint labels, it's possible to add following css to the
 .IP
 "span[vimbhint="label"] {text-transform: uppercase !important;}"
 .TP
+.B hint-match-element (bool)
+If this is set to 'true' typed chars that are not part of the set 'hint-keys'
+are used to filter hinted DOM elements by their text value.
+If 'hint-keys' are set to chars instead of numbers it might be useful to
+disable matching of the elements by 'hint-match-element=false'.
+.TP
 .B history-max-items (int)
 Maximum number of unique items stored in search-, command or URI history.
 If history-max-items is set to 0, the history file will not be changed.
@@ -1325,6 +1353,9 @@ Whether JavaScript can access the clipboard.
 .B javascript-can-open-windows-automatically (bool)
 Whether JavaScript can open popup windows automatically without user
 interaction.
+.TP
+.B geolocation (string)
+Controls website access to the geolocation API {`always', `never', `ask' (display a prompt each time)}
 .TP
 .B media-playback-allows-inline (bool)
 Whether media playback is full-screen only or inline playback is allowed.
