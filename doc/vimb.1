@@ -95,6 +95,10 @@ Start Command Mode and print `:' to the input box.
 Set cursor to the first editable element in the page and switch to Input
 Mode.
 .TP
+.B i
+Set cursor to the last focused element in the page and switch to Input Mode.
+If no element was focused before the first element is focused like with `gi'.
+.TP
 .B CTRL\-Z
 Switch Vimb into Pass-Through Mode.
 .TP
@@ -167,6 +171,13 @@ Reload the website without using caches.
 .TP
 .B CTRL\-C
 Stop loading the current page.
+.TP
+.B CTRL-LeftMouse, MiddleMouse
+Opens the clicket link into new window.
+.TP
+.B Shift-LeftMouse
+Push the link url under the cursor to the end of the Read It Later queue like
+the `:qpush' command.
 .
 .SS Motion
 .TP
@@ -1411,6 +1422,10 @@ Determines whether or not JavaScript executes within a page.
 .TP
 .B scroll-step (int)
 Number of pixel vimb scrolls if 'j' or 'k' is used.
+.TP
+.B scroll-multiplier (int)
+Multiplier to increase the scroll distance if window is scrolled by mouse
+wheel.
 .TP
 .B serif-font (string)
 The font family used as the default for content using serif font.

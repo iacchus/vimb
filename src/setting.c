@@ -143,6 +143,8 @@ void setting_init(Client *c)
     //i = 40;
     i = 310;
     setting_add(c, "scroll-step", TYPE_INTEGER, &i, internal, 0, &c->config.scrollstep);
+    i = 1;
+    setting_add(c, "scroll-multiplier", TYPE_INTEGER, &i, internal, 0, &c->config.scrollmultiplier);
     setting_add(c, "home-page", TYPE_CHAR, &SETTING_HOME_PAGE, NULL, 0, NULL);
     i = 200;
     /* TODO should be global and not overwritten by a new client */
